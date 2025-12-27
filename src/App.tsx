@@ -6,6 +6,10 @@ import {
   useDraggable,
   useDroppable,
   DragOverlay,
+  TouchSensor,
+  MouseSensor,
+  useSensor,
+  useSensors,
 } from "@dnd-kit/core";
 import {
   X,
@@ -124,6 +128,8 @@ function DroppableCell({ id, card, onRemove }: DroppableCellProps) {
       style={{ aspectRatio: "3/4" }}
       onMouseEnter={() => setShowRemove(true)}
       onMouseLeave={() => setShowRemove(false)}
+      onTouchStart={() => setShowRemove(true)}
+      onTouchEnd={() => setTimeout(() => setShowRemove(false), 2000)}
     >
       {card && (
         <>
@@ -138,7 +144,7 @@ function DroppableCell({ id, card, onRemove }: DroppableCellProps) {
           {showRemove && (
             <button
               onClick={onRemove}
-              className="absolute -top-2 -right-2 bg-gradient-to-r from-yellow-500 to-yellow-600 hover:from-yellow-600 hover:to-yellow-700 rounded-full p-1 md:p-1.5 transition-all shadow-lg"
+              className="absolute -top-2 -right-2 bg-gradient-to-r from-yellow-500 to-yellow-600 hover:from-yellow-600 hover:to-yellow-700 rounded-full p-1 md:p-1.5 transition-all shadow-lg z-10"
             >
               <X className="w-3 h-3 md:w-4 md:h-4 text-black" />
             </button>
@@ -160,6 +166,22 @@ export default function CardMemoryHelper() {
     cols: number;
   } | null>(null);
   const [activeCard, setActiveCard] = useState<CardIcon | null>(null);
+
+  // Configure sensors for better mobile support
+  const mouseSensor = useSensor(MouseSensor, {
+    activationConstraint: {
+      distance: 10,
+    },
+  });
+
+  const touchSensor = useSensor(TouchSensor, {
+    activationConstraint: {
+      delay: 250,
+      tolerance: 5,
+    },
+  });
+
+  const sensors = useSensors(mouseSensor, touchSensor);
 
   const hasCards = Object.keys(grid).length > 0;
 
@@ -264,12 +286,16 @@ export default function CardMemoryHelper() {
   const cells = Array.from({ length: totalCells }, (_, i) => `cell-${i}`);
 
   return (
-    <DndContext onDragStart={handleDragStart} onDragEnd={handleDragEnd}>
-      <div className="min-h-screen bg-gradient-to-br from-gray-900 via-black to-yellow-900/20 text-white p-4">
+    <DndContext
+      sensors={sensors}
+      onDragStart={handleDragStart}
+      onDragEnd={handleDragEnd}
+    >
+      <div className="min-h-screen bg-linear-to-br from-gray-900 via-black to-yellow-900/20 text-white p-4">
         <div className=" mx-auto space-y-6">
           {/* Header */}
           <div className="text-center mb-6">
-            <h1 className="text-3xl md:text-4xl lg:text-5xl font-bold bg-gradient-to-r from-yellow-400 via-yellow-500 to-yellow-600 bg-clip-text text-transparent mb-2 drop-shadow-lg">
+            <h1 className="text-3xl md:text-4xl lg:text-5xl font-bold bg-linear-to-r from-yellow-400 via-yellow-500 to-yellow-600 bg-clip-text text-transparent mb-2 drop-shadow-lg">
               Sự Kiện Lật Thẻ Bài
             </h1>
             <p className="text-gray-400 text-sm md:text-base">
@@ -323,12 +349,13 @@ export default function CardMemoryHelper() {
                     if (layout) handleLayoutChange(layout.rows, layout.cols);
                   }}
                 >
-                  <SelectTrigger className="bg-gray-900/50 border-yellow-500/30 text-white focus:ring-yellow-500/20">
+                  <SelectTrigger className="bg-linear-to-r from-yellow-500 to-yellow-600 border-yellow-600 text-black font-semibold hover:from-yellow-600 hover:to-yellow-700">
                     <SelectValue />
                   </SelectTrigger>
-                  <SelectContent className="bg-gray-900 border-yellow-500/30">
+                  <SelectContent className="bg-linear-to-r from-yellow-500 to-yellow-600">
                     {PRESET_LAYOUTS.map((layout) => (
                       <SelectItem
+                        className="bg-linear-to-r from-yellow-500 to-yellow-600 border-yellow-600 text-black font-semibold hover:from-yellow-600 hover:to-yellow-700"
                         key={layout.label}
                         value={`${layout.rows}x${layout.cols}`}
                       >
