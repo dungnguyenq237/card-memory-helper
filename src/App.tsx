@@ -97,12 +97,16 @@ function DraggableCard({ id, Icon, color }: DraggableCardProps) {
       ref={setNodeRef}
       {...listeners}
       {...attributes}
-      className={`${color} rounded-lg p-3 md:p-4 cursor-grab active:cursor-grabbing flex items-center justify-center transition-transform hover:scale-105 ${
-        isDragging ? "opacity-50" : ""
+      className={`${color} rounded-lg p-2 md:p-4 cursor-grab active:cursor-grabbing flex items-center justify-center transition-transform touch-none ${
+        isDragging ? "opacity-50 scale-95" : "hover:scale-105"
       }`}
-      style={{ aspectRatio: "3/4" }}
+      style={{
+        aspectRatio: "3/4",
+        touchAction: "none",
+        WebkitTouchCallout: "none",
+      }}
     >
-      <Icon className="w-6 h-6 md:w-8 md:h-8 text-white" strokeWidth={2.5} />
+      <Icon className="w-5 h-5 md:w-8 md:h-8 text-white" strokeWidth={2.5} />
     </div>
   );
 }
@@ -291,7 +295,10 @@ export default function CardMemoryHelper() {
       onDragStart={handleDragStart}
       onDragEnd={handleDragEnd}
     >
-      <div className="min-h-screen bg-linear-to-br from-gray-900 via-black to-yellow-900/20 text-white p-4">
+      <div
+        className="min-h-screen bg-linear-to-br from-gray-900 via-black to-yellow-900/20 text-white p-4 select-none touch-none"
+        style={{ WebkitTouchCallout: "none" }}
+      >
         <div className=" mx-auto space-y-6">
           {/* Header */}
           <div className="text-center mb-6">
@@ -430,15 +437,19 @@ export default function CardMemoryHelper() {
           </div>
 
           {/* Grid */}
-          <div className="space-y-3">
+          <div className="space-y-3 overflow-x-hidden">
+            {" "}
+            {/* Thêm overflow-x-hidden */}
             <h2 className="text-sm md:text-base font-semibold text-yellow-400">
               Lưới ({rows}×{cols}):
             </h2>
             <div
-              className="grid gap-2 md:gap-3 mx-auto"
+              className="grid mx-auto"
               style={{
-                gridTemplateColumns: `repeat(${cols}, 1fr)`,
-                maxWidth: cols <= 4 ? "100%" : cols <= 6 ? "90%" : "100%",
+                gridTemplateColumns: `repeat(${cols}, minmax(0, 1fr))`, // Thêm minmax(0, 1fr)
+                gap: cols > 6 ? "4px" : "8px", // Giảm gap khi nhiều cột
+                maxWidth: "100%",
+                width: "100%",
               }}
             >
               {cells.map((cellId) => (
@@ -460,7 +471,9 @@ export default function CardMemoryHelper() {
               style={{ aspectRatio: "3/4", width: "80px" }}
             >
               <activeCard.Icon
-                className="w-8 h-8 text-white"
+                className={`text-white ${
+                  cols > 6 ? "w-4 h-4" : "w-6 h-6 md:w-8 md:h-8"
+                }`}
                 strokeWidth={2.5}
               />
             </div>
