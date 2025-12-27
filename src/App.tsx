@@ -326,8 +326,8 @@ export default function CardMemoryHelper() {
               Nếu bạn thấy tool này hữu ích, ủng hộ mình một ít nếu có thể nhé!
             </p>
             <div className="flex items-center justify-center mt-2 gap-2">
-              <img src={momoImg} alt="Momo" className="w-56" />
-              <img src={techImg} alt="Tech" className="w-56" />
+              <img src={momoImg} alt="Momo" className="w-42 md:w-56" />
+              <img src={techImg} alt="Tech" className="w-42 md:w-56" />
             </div>
           </div>
 
@@ -463,11 +463,10 @@ export default function CardMemoryHelper() {
               Lưới ({rows}×{cols}):
             </h2>
             <div
-              className="grid mx-auto"
+              className="grid mx-auto max-w-full md:max-w-[60%]"
               style={{
                 gridTemplateColumns: `repeat(${cols}, minmax(0, 1fr))`, // Thêm minmax(0, 1fr)
                 gap: cols > 6 ? "4px" : "8px", // Giảm gap khi nhiều cột
-                maxWidth: "50%",
                 width: "100%",
               }}
             >
