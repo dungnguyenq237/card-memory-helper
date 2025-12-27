@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from "react";
+import { useState, useCallback } from "react";
 import {
   DndContext,
   DragEndEvent,
@@ -439,22 +439,6 @@ export default function CardMemoryHelper() {
             </div>
           ) : null}
         </DragOverlay>
-
-        <style jsx>{`
-          @keyframes scaleIn {
-            from {
-              transform: scale(0.8);
-              opacity: 0;
-            }
-            to {
-              transform: scale(1);
-              opacity: 1;
-            }
-          }
-          .animate-scaleIn {
-            animation: scaleIn 0.3s ease-out;
-          }
-        `}</style>
       </div>
     </DndContext>
   );
