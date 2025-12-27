@@ -36,6 +36,9 @@ import {
 } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
 
+import momoImg from "./assets/momo.jpg";
+import techImg from "./assets/tech.jpg";
+
 interface CardIcon {
   id: string;
   Icon: LucideIcon;
@@ -66,9 +69,21 @@ const CARD_ICONS: CardIcon[] = [
   { id: "ship", Icon: Ship, color: "bg-purple-600" },
   { id: "gem", Icon: Gem, color: "bg-green-500" },
   { id: "compass", Icon: Compass, color: "bg-orange-500" },
-  { id: "search", Icon: Search, color: "bg-gradient-to-r from-fuchsia-500 to-cyan-500" },
-  { id: "sparkles", Icon: Sparkles, color: "bg-gradient-to-r from-fuchsia-500 to-cyan-500" },
-  { id: "sailboat", Icon: Ship, color: "bg-gradient-to-r from-fuchsia-500 to-cyan-500" },
+  {
+    id: "search",
+    Icon: Search,
+    color: "bg-gradient-to-r from-fuchsia-500 to-cyan-500",
+  },
+  {
+    id: "sparkles",
+    Icon: Sparkles,
+    color: "bg-gradient-to-r from-fuchsia-500 to-cyan-500",
+  },
+  {
+    id: "sailboat",
+    Icon: Ship,
+    color: "bg-gradient-to-r from-fuchsia-500 to-cyan-500",
+  },
 ];
 
 const PRESET_LAYOUTS: Layout[] = [
@@ -305,10 +320,19 @@ export default function CardMemoryHelper() {
             <p className="text-gray-400 text-sm md:text-base">
               Công cụ hỗ trợ lật thẻ bài
             </p>
+            <p className="text-gray-400 text-sm md:text-base">
+              Tool này hoàn toàn miễn phí nên các bạn cứ thoải mái dùng.
+              <br />
+              Nếu bạn thấy tool này hữu ích, ủng hộ mình một ít nếu có thể nhé!
+            </p>
+            <div className="flex items-center justify-center mt-2 gap-2">
+              <img src={momoImg} alt="Momo" className="w-56" />
+              <img src={techImg} alt="Tech" className="w-56" />
+            </div>
           </div>
 
           {/* Controls */}
-          <div className="bg-gradient-to-br from-gray-800/80 to-gray-900/80 backdrop-blur-sm rounded-xl p-5 lg:p-6 space-y-4 border border-yellow-500/30 shadow-xl shadow-yellow-500/10">
+          <div className="bg-linear-to-br from-gray-800/80 to-gray-900/80 backdrop-blur-sm rounded-xl p-5 lg:p-6 space-y-4 border border-yellow-500/30 shadow-xl shadow-yellow-500/10">
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 items-end">
               <div className="space-y-1">
                 <label className="text-xs text-yellow-400 font-medium">
@@ -316,7 +340,6 @@ export default function CardMemoryHelper() {
                 </label>
                 <Input
                   type="number"
-                  min="1"
                   max="10"
                   value={rows}
                   onChange={(e) =>
@@ -331,7 +354,6 @@ export default function CardMemoryHelper() {
                 </label>
                 <Input
                   type="number"
-                  min="1"
                   max="10"
                   value={cols}
                   onChange={(e) =>
@@ -445,7 +467,7 @@ export default function CardMemoryHelper() {
               style={{
                 gridTemplateColumns: `repeat(${cols}, minmax(0, 1fr))`, // Thêm minmax(0, 1fr)
                 gap: cols > 6 ? "4px" : "8px", // Giảm gap khi nhiều cột
-                maxWidth: "100%",
+                maxWidth: "50%",
                 width: "100%",
               }}
             >
