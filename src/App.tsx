@@ -60,15 +60,15 @@ interface GridState {
 }
 
 const CARD_ICONS: CardIcon[] = [
-  { id: "anchor", Icon: Anchor, color: "bg-pink-500" },
   { id: "wine", Icon: Wine, color: "bg-red-500" },
+  { id: "anchor", Icon: Anchor, color: "bg-pink-500" },
   { id: "music", Icon: Music, color: "bg-yellow-500" },
   { id: "ship", Icon: Ship, color: "bg-purple-600" },
   { id: "gem", Icon: Gem, color: "bg-green-500" },
-  { id: "search", Icon: Search, color: "bg-blue-400" },
-  { id: "sparkles", Icon: Sparkles, color: "bg-pink-400" },
   { id: "compass", Icon: Compass, color: "bg-orange-500" },
-  { id: "sailboat", Icon: Ship, color: "bg-purple-700" },
+  { id: "search", Icon: Search, color: "bg-gradient-to-r from-fuchsia-500 to-cyan-500" },
+  { id: "sparkles", Icon: Sparkles, color: "bg-gradient-to-r from-fuchsia-500 to-cyan-500" },
+  { id: "sailboat", Icon: Ship, color: "bg-gradient-to-r from-fuchsia-500 to-cyan-500" },
 ];
 
 const PRESET_LAYOUTS: Layout[] = [
