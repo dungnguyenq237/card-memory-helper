@@ -295,10 +295,7 @@ export default function CardMemoryHelper() {
       onDragStart={handleDragStart}
       onDragEnd={handleDragEnd}
     >
-      <div
-        className="min-h-screen bg-linear-to-br from-gray-900 via-black to-yellow-900/20 text-white p-4 select-none touch-none"
-        style={{ WebkitTouchCallout: "none" }}
-      >
+      <div className="min-h-screen bg-linear-to-br from-gray-900 via-black to-yellow-900/20 text-white p-4">
         <div className=" mx-auto space-y-6">
           {/* Header */}
           <div className="text-center mb-6">
