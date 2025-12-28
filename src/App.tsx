@@ -23,6 +23,7 @@ import {
   Search,
   Sparkles,
   Compass,
+  Lock,
   LucideIcon,
 } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
@@ -56,10 +57,16 @@ interface HistoryAction {
   cellId: string;
   card: CardIcon;
   previousCard?: CardIcon;
+  lockedCellId?: string; // ID của ô được lock cùng
+  wasLocked?: boolean; // Trạng thái lock trước đó
 }
 
 interface GridState {
   [cellId: string]: CardIcon;
+}
+
+interface LockedCells {
+  [cellId: string]: boolean;
 }
 
 const CARD_ICONS: CardIcon[] = [
@@ -72,17 +79,17 @@ const CARD_ICONS: CardIcon[] = [
   {
     id: "search",
     Icon: Search,
-    color: "bg-linear-to-r from-fuchsia-500 to-cyan-500",
+    color: "bg-gradient-to-r from-fuchsia-500 to-cyan-500",
   },
   {
     id: "sparkles",
     Icon: Sparkles,
-    color: "bg-linear-to-r from-fuchsia-500 to-cyan-500",
+    color: "bg-gradient-to-r from-fuchsia-500 to-cyan-500",
   },
   {
     id: "sailboat",
     Icon: Ship,
-    color: "bg-linear-to-r from-fuchsia-500 to-cyan-500",
+    color: "bg-gradient-to-r from-fuchsia-500 to-cyan-500",
   },
 ];
 
@@ -150,7 +157,9 @@ interface DroppableCellProps {
   card?: CardIcon;
   onRemove: () => void;
   onCellClick: () => void;
+  onDoubleClick: () => void;
   isClickMode: boolean;
+  isLocked: boolean;
 }
 
 function DroppableCell({
@@ -158,45 +167,75 @@ function DroppableCell({
   card,
   onRemove,
   onCellClick,
+  onDoubleClick,
   isClickMode,
+  isLocked,
 }: DroppableCellProps) {
   const { setNodeRef, isOver } = useDroppable({ id });
   const [showRemove, setShowRemove] = useState(false);
+  const [lastTap, setLastTap] = useState(0);
+
+  const handleTouchEnd = (e: React.TouchEvent) => {
+    const now = Date.now();
+    const DOUBLE_TAP_DELAY = 300; // 300ms
+
+    if (now - lastTap < DOUBLE_TAP_DELAY) {
+      e.preventDefault();
+      onDoubleClick();
+      setLastTap(0);
+    } else {
+      setLastTap(now);
+    }
+  };
 
   return (
     <div
       ref={setNodeRef}
       onClick={onCellClick}
-      className={`bg-linear-to-br from-gray-800/60 to-gray-900/60 backdrop-blur-sm rounded-lg border-2 transition-all relative ${
+      onDoubleClick={onDoubleClick}
+      onTouchEnd={handleTouchEnd}
+      className={`bg-gradient-to-br from-gray-800/60 to-gray-900/60 backdrop-blur-sm rounded-lg border-2 transition-all relative ${
         isOver
           ? "border-yellow-500 bg-yellow-500/10 shadow-lg shadow-yellow-500/30"
           : isClickMode && !card
           ? "border-yellow-400/50 bg-yellow-400/5 cursor-pointer hover:border-yellow-400 hover:bg-yellow-400/10"
           : "border-gray-700/50"
+      } ${
+        isLocked
+          ? "ring-2 ring-blue-500 ring-offset-1 ring-offset-gray-900"
+          : ""
       }`}
       style={{ aspectRatio: "3/4" }}
       onMouseEnter={() => setShowRemove(true)}
       onMouseLeave={() => setShowRemove(false)}
       onTouchStart={() => setShowRemove(true)}
-      onTouchEnd={() => setTimeout(() => setShowRemove(false), 2000)}
     >
       {card && (
         <>
           <div
-            className={`${card.color} rounded-lg w-full h-full flex items-center justify-center animate-scaleIn shadow-lg`}
+            className={`${
+              card.color
+            } rounded-lg w-full h-full flex items-center justify-center animate-scaleIn shadow-lg ${
+              isLocked ? "opacity-80" : ""
+            }`}
           >
             <card.Icon
               className="w-6 h-6 md:w-8 md:h-8 lg:w-10 lg:h-10 text-white"
               strokeWidth={2.5}
             />
           </div>
-          {showRemove && (
+          {isLocked && (
+            <div className="absolute top-1 right-1 bg-blue-500 rounded-full p-1">
+              <Lock className="w-3 h-3 text-white" />
+            </div>
+          )}
+          {showRemove && !isLocked && (
             <button
               onClick={(e) => {
                 e.stopPropagation();
                 onRemove();
               }}
-              className="absolute -top-2 -right-2 bg-linear-to-r from-yellow-500 to-yellow-600 hover:from-yellow-600 hover:to-yellow-700 rounded-full p-1 md:p-1.5 transition-all shadow-lg z-10"
+              className="absolute -top-2 -right-2 bg-gradient-to-r from-yellow-500 to-yellow-600 hover:from-yellow-600 hover:to-yellow-700 rounded-full p-1 md:p-1.5 transition-all shadow-lg z-10"
             >
               <X className="w-3 h-3 md:w-4 md:h-4 text-black" />
             </button>
@@ -211,6 +250,7 @@ export default function CardMemoryHelper() {
   const [rows, setRows] = useState<number>(2);
   const [cols, setCols] = useState<number>(4);
   const [grid, setGrid] = useState<GridState>({});
+  const [lockedCells, setLockedCells] = useState<LockedCells>({});
   const [history, setHistory] = useState<HistoryAction[]>([]);
   const [showWarning, setShowWarning] = useState<boolean>(false);
   const [pendingLayout, setPendingLayout] = useState<{
@@ -241,29 +281,105 @@ export default function CardMemoryHelper() {
     setSelectedCard((prev) => (prev?.id === card.id ? null : card));
   }, []);
 
+  // Tìm ô đầu tiên có cùng loại thẻ (chưa bị lock)
+  const findMatchingCard = useCallback(
+    (cardId: string, excludeCellId: string) => {
+      for (const [cellId, cellCard] of Object.entries(grid)) {
+        if (
+          cellId !== excludeCellId &&
+          cellCard.id === cardId &&
+          !lockedCells[cellId]
+        ) {
+          return cellId;
+        }
+      }
+      return null;
+    },
+    [grid, lockedCells]
+  );
+
+  // Tìm ô có cùng loại thẻ đang bị lock
+  const findLockedMatchingCard = useCallback(
+    (cardId: string, excludeCellId: string) => {
+      for (const [cellId, cellCard] of Object.entries(grid)) {
+        if (
+          cellId !== excludeCellId &&
+          cellCard.id === cardId &&
+          lockedCells[cellId]
+        ) {
+          return cellId;
+        }
+      }
+      return null;
+    },
+    [grid, lockedCells]
+  );
+
   const handleCellClick = useCallback(
     (cellId: string) => {
       if (!selectedCard) return;
+      if (lockedCells[cellId]) return; // Không thể đặt vào ô đã lock
 
       const previousCard = grid[cellId];
 
       setGrid((prev) => ({ ...prev, [cellId]: selectedCard }));
 
-      if (previousCard) {
+      // Nếu là thẻ lock, lock ngay ô này
+      if (selectedCard.id === "lock") {
+        setLockedCells((prev) => ({ ...prev, [cellId]: true }));
         setHistory((prev) => [
           ...prev,
-          { type: "replace", cellId, card: selectedCard, previousCard },
+          {
+            type: previousCard ? "replace" : "add",
+            cellId,
+            card: selectedCard,
+            previousCard,
+            wasLocked: false,
+          },
+        ]);
+        setSelectedCard(null);
+        return;
+      }
+
+      // Tìm thẻ matching
+      const matchingCellId = findMatchingCard(selectedCard.id, cellId);
+
+      if (matchingCellId) {
+        // Lock cả 2 ô
+        setLockedCells((prev) => ({
+          ...prev,
+          [cellId]: true,
+          [matchingCellId]: true,
+        }));
+
+        setHistory((prev) => [
+          ...prev,
+          {
+            type: previousCard ? "replace" : "add",
+            cellId,
+            card: selectedCard,
+            previousCard,
+            lockedCellId: matchingCellId,
+            wasLocked: false,
+          },
         ]);
       } else {
+        // Không có matching, chỉ add bình thường
         setHistory((prev) => [
           ...prev,
-          { type: "add", cellId, card: selectedCard },
+          {
+            type: previousCard ? "replace" : "add",
+            cellId,
+            card: selectedCard,
+            previousCard,
+            wasLocked: false,
+          },
         ]);
       }
 
       setSelectedCard(null);
     },
-    [selectedCard, grid]
+    [selectedCard, grid, lockedCells, findMatchingCard]
   );
 
   const handleDragStart = useCallback((event: DragStartEvent) => {
@@ -279,63 +395,204 @@ export default function CardMemoryHelper() {
         const card = CARD_ICONS.find((c) => c.id === active.id);
         if (card) {
           const cellId = over.id as string;
+
+          if (lockedCells[cellId]) {
+            setActiveCard(null);
+            return; // Không thể drop vào ô đã lock
+          }
+
           const previousCard = grid[cellId];
 
           setGrid((prev) => ({ ...prev, [cellId]: card }));
 
-          if (previousCard) {
+          // Nếu là thẻ lock, lock ngay ô này
+          if (card.id === "lock") {
+            setLockedCells((prev) => ({ ...prev, [cellId]: true }));
             setHistory((prev) => [
               ...prev,
-              { type: "replace", cellId, card, previousCard },
+              {
+                type: previousCard ? "replace" : "add",
+                cellId,
+                card,
+                previousCard,
+                wasLocked: false,
+              },
+            ]);
+            setActiveCard(null);
+            return;
+          }
+
+          // Tìm thẻ matching
+          const matchingCellId = findMatchingCard(card.id, cellId);
+
+          if (matchingCellId) {
+            // Lock cả 2 ô
+            setLockedCells((prev) => ({
+              ...prev,
+              [cellId]: true,
+              [matchingCellId]: true,
+            }));
+
+            setHistory((prev) => [
+              ...prev,
+              {
+                type: previousCard ? "replace" : "add",
+                cellId,
+                card,
+                previousCard,
+                lockedCellId: matchingCellId,
+                wasLocked: false,
+              },
             ]);
           } else {
-            setHistory((prev) => [...prev, { type: "add", cellId, card }]);
+            // Không có matching, chỉ add bình thường
+            setHistory((prev) => [
+              ...prev,
+              {
+                type: previousCard ? "replace" : "add",
+                cellId,
+                card,
+                previousCard,
+                wasLocked: false,
+              },
+            ]);
           }
         }
       }
       setActiveCard(null);
     },
-    [grid]
+    [grid, lockedCells, findMatchingCard]
   );
 
   const handleRemoveCard = useCallback(
     (cellId: string) => {
       const card = grid[cellId];
-      if (card) {
+      if (card && !lockedCells[cellId]) {
         setGrid((prev) => {
           const newGrid = { ...prev };
           delete newGrid[cellId];
           return newGrid;
         });
-        setHistory((prev) => [...prev, { type: "remove", cellId, card }]);
+
+        // Tìm và mở khóa thẻ matching đang bị lock (nếu có)
+        const lockedMatchingCellId = findLockedMatchingCard(card.id, cellId);
+        if (lockedMatchingCellId) {
+          setLockedCells((prev) => {
+            const newLocked = { ...prev };
+            delete newLocked[lockedMatchingCellId];
+            return newLocked;
+          });
+        }
+
+        setHistory((prev) => [
+          ...prev,
+          {
+            type: "remove",
+            cellId,
+            card,
+            wasLocked: false,
+            lockedCellId: lockedMatchingCellId || undefined,
+          },
+        ]);
       }
     },
-    [grid]
+    [grid, lockedCells, findLockedMatchingCard]
+  );
+
+  const handleDoubleClick = useCallback(
+    (cellId: string) => {
+      if (lockedCells[cellId]) {
+        const card = grid[cellId];
+
+        // Mở khóa ô này
+        setLockedCells((prev) => {
+          const newLocked = { ...prev };
+          delete newLocked[cellId];
+
+          // Tìm và mở khóa thẻ matching đang bị lock (nếu có)
+          if (card && card.id !== "lock") {
+            const lockedMatchingCellId = findLockedMatchingCard(
+              card.id,
+              cellId
+            );
+            if (lockedMatchingCellId) {
+              delete newLocked[lockedMatchingCellId];
+            }
+          }
+
+          return newLocked;
+        });
+      }
+    },
+    [lockedCells, grid, findLockedMatchingCard]
   );
 
   const handleUndo = useCallback(() => {
     if (history.length === 0) return;
 
     const lastAction = history[history.length - 1];
+
     if (lastAction.type === "add") {
       setGrid((prev) => {
         const newGrid = { ...prev };
         delete newGrid[lastAction.cellId];
         return newGrid;
       });
+
+      // Mở khóa nếu có
+      if (lastAction.lockedCellId) {
+        setLockedCells((prev) => {
+          const newLocked = { ...prev };
+          delete newLocked[lastAction.cellId];
+          delete newLocked[lastAction.lockedCellId!];
+          return newLocked;
+        });
+      } else if (
+        lastAction.card.id === "lock" ||
+        lastAction.wasLocked !== undefined
+      ) {
+        setLockedCells((prev) => {
+          const newLocked = { ...prev };
+          delete newLocked[lastAction.cellId];
+          return newLocked;
+        });
+      }
     } else if (lastAction.type === "remove") {
       setGrid((prev) => ({ ...prev, [lastAction.cellId]: lastAction.card }));
+      if (lastAction.wasLocked) {
+        setLockedCells((prev) => ({ ...prev, [lastAction.cellId]: true }));
+      }
     } else if (lastAction.type === "replace" && lastAction.previousCard) {
       setGrid((prev) => ({
         ...prev,
         [lastAction.cellId]: lastAction.previousCard!,
       }));
+
+      // Mở khóa nếu có
+      if (lastAction.lockedCellId) {
+        setLockedCells((prev) => {
+          const newLocked = { ...prev };
+          delete newLocked[lastAction.cellId];
+          delete newLocked[lastAction.lockedCellId!];
+          return newLocked;
+        });
+      } else if (
+        lastAction.card.id === "lock" ||
+        lastAction.wasLocked !== undefined
+      ) {
+        setLockedCells((prev) => {
+          const newLocked = { ...prev };
+          delete newLocked[lastAction.cellId];
+          return newLocked;
+        });
+      }
     }
     setHistory((prev) => prev.slice(0, -1));
   }, [history]);
 
   const handleReset = useCallback(() => {
     setGrid({});
+    setLockedCells({});
     setHistory([]);
     setSelectedCard(null);
   }, []);
@@ -358,6 +615,7 @@ export default function CardMemoryHelper() {
       setRows(pendingLayout.rows);
       setCols(pendingLayout.cols);
       setGrid({});
+      setLockedCells({});
       setHistory([]);
       setSelectedCard(null);
     }
@@ -461,7 +719,7 @@ export default function CardMemoryHelper() {
               <Button
                 onClick={handleUndo}
                 disabled={history.length === 0}
-                className="bg-linear-to-r from-yellow-500 to-yellow-600 hover:from-yellow-600 hover:to-yellow-700 text-black font-semibold shadow-lg shadow-yellow-500/30 disabled:opacity-50 disabled:shadow-none"
+                className="bg-gradient-to-r from-yellow-500 to-yellow-600 hover:from-yellow-600 hover:to-yellow-700 text-black font-semibold shadow-lg shadow-yellow-500/30 disabled:opacity-50 disabled:shadow-none"
               >
                 <Undo2 className="w-4 h-4 mr-2" />
                 Quay lại
@@ -479,7 +737,7 @@ export default function CardMemoryHelper() {
 
           {/* Warning Dialog */}
           {showWarning && (
-            <Alert className="bg-linear-to-br from-gray-800/90 to-gray-900/90 backdrop-blur-sm border-yellow-500/50 shadow-xl">
+            <Alert className="bg-gradient-to-br from-gray-800/90 to-gray-900/90 backdrop-blur-sm border-yellow-500/50 shadow-xl">
               <AlertDescription className="space-y-4">
                 <p className="text-white font-medium">
                   Bạn có các thẻ đã đặt. Đổi layout sẽ xóa hết các thẻ này. Bạn
@@ -488,7 +746,7 @@ export default function CardMemoryHelper() {
                 <div className="flex gap-2">
                   <Button
                     onClick={confirmLayoutChange}
-                    className="flex-1 bg-linear-to-r from-yellow-500 to-yellow-600 hover:from-yellow-600 hover:to-yellow-700 text-black font-semibold shadow-lg"
+                    className="flex-1 bg-gradient-to-r from-yellow-500 to-yellow-600 hover:from-yellow-600 hover:to-yellow-700 text-black font-semibold shadow-lg"
                   >
                     Đồng ý
                   </Button>
@@ -514,7 +772,7 @@ export default function CardMemoryHelper() {
                 ? "Đã chọn - Click vào ô để đặt thẻ:"
                 : "Chọn biểu tượng (Click hoặc Kéo):"}
             </h2>
-            <div className="grid grid-cols-4 sm:grid-cols-5 md:grid-cols-6 lg:grid-cols-9 gap-2 md:gap-3 bg-linear-to-br from-gray-800/50 to-gray-900/50 backdrop-blur-sm p-3 md:p-4 rounded-xl border border-yellow-500/20">
+            <div className="grid grid-cols-4 sm:grid-cols-5 md:grid-cols-6 lg:grid-cols-9 gap-2 md:gap-3 bg-gradient-to-br from-gray-800/50 to-gray-900/50 backdrop-blur-sm p-3 md:p-4 rounded-xl border border-yellow-500/20">
               {CARD_ICONS.map((card) => (
                 <DraggableCard
                   key={card.id}
@@ -546,10 +804,15 @@ export default function CardMemoryHelper() {
                   card={grid[cellId]}
                   onRemove={() => handleRemoveCard(cellId)}
                   onCellClick={() => handleCellClick(cellId)}
+                  onDoubleClick={() => handleDoubleClick(cellId)}
                   isClickMode={!!selectedCard}
+                  isLocked={!!lockedCells[cellId]}
                 />
               ))}
             </div>
+            <p className="text-xs md:text-xl text-yellow-400 text-center mt-2">
+              💡 Mẹo: Double click vào thẻ đã khóa để mở khóa
+            </p>
           </div>
         </div>
 
