@@ -72,17 +72,17 @@ const CARD_ICONS: CardIcon[] = [
   {
     id: "search",
     Icon: Search,
-    color: "bg-gradient-to-r from-fuchsia-500 to-cyan-500",
+    color: "bg-linear-to-r from-fuchsia-500 to-cyan-500",
   },
   {
     id: "sparkles",
     Icon: Sparkles,
-    color: "bg-gradient-to-r from-fuchsia-500 to-cyan-500",
+    color: "bg-linear-to-r from-fuchsia-500 to-cyan-500",
   },
   {
     id: "sailboat",
     Icon: Ship,
-    color: "bg-gradient-to-r from-fuchsia-500 to-cyan-500",
+    color: "bg-linear-to-r from-fuchsia-500 to-cyan-500",
   },
 ];
 
@@ -100,9 +100,17 @@ interface DraggableCardProps {
   id: string;
   Icon: LucideIcon;
   color: string;
+  isSelected: boolean;
+  onCardClick: () => void;
 }
 
-function DraggableCard({ id, Icon, color }: DraggableCardProps) {
+function DraggableCard({
+  id,
+  Icon,
+  color,
+  isSelected,
+  onCardClick,
+}: DraggableCardProps) {
   const { attributes, listeners, setNodeRef, isDragging } = useDraggable({
     id,
   });
@@ -112,8 +120,16 @@ function DraggableCard({ id, Icon, color }: DraggableCardProps) {
       ref={setNodeRef}
       {...listeners}
       {...attributes}
-      className={`${color} rounded-lg p-2 md:p-4 cursor-grab active:cursor-grabbing flex items-center justify-center transition-transform touch-none ${
+      onClick={(e) => {
+        e.stopPropagation();
+        onCardClick();
+      }}
+      className={`${color} rounded-lg p-2 md:p-4 cursor-pointer flex items-center justify-center transition-all touch-none relative ${
         isDragging ? "opacity-50 scale-95" : "hover:scale-105"
+      } ${
+        isSelected
+          ? "ring-4 ring-yellow-400 ring-offset-2 ring-offset-gray-900 scale-110 shadow-xl shadow-yellow-400/50"
+          : ""
       }`}
       style={{
         aspectRatio: "3/4",
@@ -122,6 +138,9 @@ function DraggableCard({ id, Icon, color }: DraggableCardProps) {
       }}
     >
       <Icon className="w-5 h-5 md:w-8 md:h-8 text-white" strokeWidth={2.5} />
+      {isSelected && (
+        <div className="absolute -top-1 -right-1 w-3 h-3 bg-yellow-400 rounded-full animate-pulse"></div>
+      )}
     </div>
   );
 }
@@ -130,18 +149,29 @@ interface DroppableCellProps {
   id: string;
   card?: CardIcon;
   onRemove: () => void;
+  onCellClick: () => void;
+  isClickMode: boolean;
 }
 
-function DroppableCell({ id, card, onRemove }: DroppableCellProps) {
+function DroppableCell({
+  id,
+  card,
+  onRemove,
+  onCellClick,
+  isClickMode,
+}: DroppableCellProps) {
   const { setNodeRef, isOver } = useDroppable({ id });
   const [showRemove, setShowRemove] = useState(false);
 
   return (
     <div
       ref={setNodeRef}
-      className={`bg-gradient-to-br from-gray-800/60 to-gray-900/60 backdrop-blur-sm rounded-lg border-2 transition-all relative ${
+      onClick={onCellClick}
+      className={`bg-linear-to-br from-gray-800/60 to-gray-900/60 backdrop-blur-sm rounded-lg border-2 transition-all relative ${
         isOver
           ? "border-yellow-500 bg-yellow-500/10 shadow-lg shadow-yellow-500/30"
+          : isClickMode && !card
+          ? "border-yellow-400/50 bg-yellow-400/5 cursor-pointer hover:border-yellow-400 hover:bg-yellow-400/10"
           : "border-gray-700/50"
       }`}
       style={{ aspectRatio: "3/4" }}
@@ -162,8 +192,11 @@ function DroppableCell({ id, card, onRemove }: DroppableCellProps) {
           </div>
           {showRemove && (
             <button
-              onClick={onRemove}
-              className="absolute -top-2 -right-2 bg-gradient-to-r from-yellow-500 to-yellow-600 hover:from-yellow-600 hover:to-yellow-700 rounded-full p-1 md:p-1.5 transition-all shadow-lg z-10"
+              onClick={(e) => {
+                e.stopPropagation();
+                onRemove();
+              }}
+              className="absolute -top-2 -right-2 bg-linear-to-r from-yellow-500 to-yellow-600 hover:from-yellow-600 hover:to-yellow-700 rounded-full p-1 md:p-1.5 transition-all shadow-lg z-10"
             >
               <X className="w-3 h-3 md:w-4 md:h-4 text-black" />
             </button>
@@ -185,8 +218,8 @@ export default function CardMemoryHelper() {
     cols: number;
   } | null>(null);
   const [activeCard, setActiveCard] = useState<CardIcon | null>(null);
+  const [selectedCard, setSelectedCard] = useState<CardIcon | null>(null);
 
-  // Configure sensors for better mobile support
   const mouseSensor = useSensor(MouseSensor, {
     activationConstraint: {
       distance: 10,
@@ -204,9 +237,39 @@ export default function CardMemoryHelper() {
 
   const hasCards = Object.keys(grid).length > 0;
 
+  const handleCardClick = useCallback((card: CardIcon) => {
+    setSelectedCard((prev) => (prev?.id === card.id ? null : card));
+  }, []);
+
+  const handleCellClick = useCallback(
+    (cellId: string) => {
+      if (!selectedCard) return;
+
+      const previousCard = grid[cellId];
+
+      setGrid((prev) => ({ ...prev, [cellId]: selectedCard }));
+
+      if (previousCard) {
+        setHistory((prev) => [
+          ...prev,
+          { type: "replace", cellId, card: selectedCard, previousCard },
+        ]);
+      } else {
+        setHistory((prev) => [
+          ...prev,
+          { type: "add", cellId, card: selectedCard },
+        ]);
+      }
+
+      setSelectedCard(null);
+    },
+    [selectedCard, grid]
+  );
+
   const handleDragStart = useCallback((event: DragStartEvent) => {
     const card = CARD_ICONS.find((c) => c.id === event.active.id);
     setActiveCard(card || null);
+    setSelectedCard(null);
   }, []);
 
   const handleDragEnd = useCallback(
@@ -220,7 +283,6 @@ export default function CardMemoryHelper() {
 
           setGrid((prev) => ({ ...prev, [cellId]: card }));
 
-          // Track history for undo
           if (previousCard) {
             setHistory((prev) => [
               ...prev,
@@ -275,6 +337,7 @@ export default function CardMemoryHelper() {
   const handleReset = useCallback(() => {
     setGrid({});
     setHistory([]);
+    setSelectedCard(null);
   }, []);
 
   const handleLayoutChange = useCallback(
@@ -296,6 +359,7 @@ export default function CardMemoryHelper() {
       setCols(pendingLayout.cols);
       setGrid({});
       setHistory([]);
+      setSelectedCard(null);
     }
     setShowWarning(false);
     setPendingLayout(null);
@@ -397,7 +461,7 @@ export default function CardMemoryHelper() {
               <Button
                 onClick={handleUndo}
                 disabled={history.length === 0}
-                className="bg-gradient-to-r from-yellow-500 to-yellow-600 hover:from-yellow-600 hover:to-yellow-700 text-black font-semibold shadow-lg shadow-yellow-500/30 disabled:opacity-50 disabled:shadow-none"
+                className="bg-linear-to-r from-yellow-500 to-yellow-600 hover:from-yellow-600 hover:to-yellow-700 text-black font-semibold shadow-lg shadow-yellow-500/30 disabled:opacity-50 disabled:shadow-none"
               >
                 <Undo2 className="w-4 h-4 mr-2" />
                 Quay lại
@@ -415,7 +479,7 @@ export default function CardMemoryHelper() {
 
           {/* Warning Dialog */}
           {showWarning && (
-            <Alert className="bg-gradient-to-br from-gray-800/90 to-gray-900/90 backdrop-blur-sm border-yellow-500/50 shadow-xl">
+            <Alert className="bg-linear-to-br from-gray-800/90 to-gray-900/90 backdrop-blur-sm border-yellow-500/50 shadow-xl">
               <AlertDescription className="space-y-4">
                 <p className="text-white font-medium">
                   Bạn có các thẻ đã đặt. Đổi layout sẽ xóa hết các thẻ này. Bạn
@@ -424,7 +488,7 @@ export default function CardMemoryHelper() {
                 <div className="flex gap-2">
                   <Button
                     onClick={confirmLayoutChange}
-                    className="flex-1 bg-gradient-to-r from-yellow-500 to-yellow-600 hover:from-yellow-600 hover:to-yellow-700 text-black font-semibold shadow-lg"
+                    className="flex-1 bg-linear-to-r from-yellow-500 to-yellow-600 hover:from-yellow-600 hover:to-yellow-700 text-black font-semibold shadow-lg"
                   >
                     Đồng ý
                   </Button>
@@ -446,27 +510,32 @@ export default function CardMemoryHelper() {
           {/* Card Pool */}
           <div className="space-y-3">
             <h2 className="text-sm md:text-base font-semibold text-yellow-400">
-              Chọn biểu tượng:
+              {selectedCard
+                ? "Đã chọn - Click vào ô để đặt thẻ:"
+                : "Chọn biểu tượng (Click hoặc Kéo):"}
             </h2>
-            <div className="grid grid-cols-4 sm:grid-cols-5 md:grid-cols-6 lg:grid-cols-9 gap-2 md:gap-3 bg-gradient-to-br from-gray-800/50 to-gray-900/50 backdrop-blur-sm p-3 md:p-4 rounded-xl border border-yellow-500/20">
+            <div className="grid grid-cols-4 sm:grid-cols-5 md:grid-cols-6 lg:grid-cols-9 gap-2 md:gap-3 bg-linear-to-br from-gray-800/50 to-gray-900/50 backdrop-blur-sm p-3 md:p-4 rounded-xl border border-yellow-500/20">
               {CARD_ICONS.map((card) => (
-                <DraggableCard key={card.id} {...card} />
+                <DraggableCard
+                  key={card.id}
+                  {...card}
+                  isSelected={selectedCard?.id === card.id}
+                  onCardClick={() => handleCardClick(card)}
+                />
               ))}
             </div>
           </div>
 
           {/* Grid */}
           <div className="space-y-3 overflow-x-hidden">
-            {" "}
-            {/* Thêm overflow-x-hidden */}
             <h2 className="text-sm md:text-base font-semibold text-yellow-400">
               Lưới ({rows}×{cols}):
             </h2>
             <div
               className="grid mx-auto max-w-full md:max-w-[60%]"
               style={{
-                gridTemplateColumns: `repeat(${cols}, minmax(0, 1fr))`, // Thêm minmax(0, 1fr)
-                gap: cols > 6 ? "4px" : "8px", // Giảm gap khi nhiều cột
+                gridTemplateColumns: `repeat(${cols}, minmax(0, 1fr))`,
+                gap: cols > 6 ? "4px" : "8px",
                 width: "100%",
               }}
             >
@@ -476,6 +545,8 @@ export default function CardMemoryHelper() {
                   id={cellId}
                   card={grid[cellId]}
                   onRemove={() => handleRemoveCard(cellId)}
+                  onCellClick={() => handleCellClick(cellId)}
+                  isClickMode={!!selectedCard}
                 />
               ))}
             </div>
