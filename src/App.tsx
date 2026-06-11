@@ -11,21 +11,7 @@ import {
   useSensor,
   useSensors,
 } from "@dnd-kit/core";
-import {
-  X,
-  RotateCcw,
-  Undo2,
-  Anchor,
-  Wine,
-  Music,
-  Ship,
-  Gem,
-  Search,
-  Sparkles,
-  Compass,
-  Lock,
-  LucideIcon,
-} from "lucide-react";
+import { X, RotateCcw, Undo2, Lock } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import {
@@ -39,10 +25,19 @@ import { Input } from "@/components/ui/input";
 
 import momoImg from "./assets/momo.jpg";
 import techImg from "./assets/tech.jpg";
+import anhTrangImg from "./assets/anhtrang.jpg";
+import coGaiImg from "./assets/cogai.jpg";
+import gioImg from "./assets/gio.jpg";
+import matTroiImg from "./assets/mattroi.jpg";
+import muaImg from "./assets/mua.jpg";
+import nguoiTuyetImg from "./assets/nguoituyet.jpg";
+import samSetImg from "./assets/samset.jpg";
+import timKiemImg from "./assets/timkiem.jpg";
+import xuImg from "./assets/xu.jpg";
 
 interface CardIcon {
   id: string;
-  Icon: LucideIcon;
+  image: string;
   color: string;
 }
 
@@ -70,26 +65,26 @@ interface LockedCells {
 }
 
 const CARD_ICONS: CardIcon[] = [
-  { id: "wine", Icon: Wine, color: "bg-red-500" },
-  { id: "anchor", Icon: Anchor, color: "bg-pink-500" },
-  { id: "music", Icon: Music, color: "bg-yellow-500" },
-  { id: "ship", Icon: Ship, color: "bg-purple-600" },
-  { id: "gem", Icon: Gem, color: "bg-green-500" },
-  { id: "compass", Icon: Compass, color: "bg-orange-500" },
+  { id: "wine", image: xuImg, color: "bg-rose-300" },
+  { id: "anchor", image: anhTrangImg, color: "bg-pink-300" },
+  { id: "music", image: gioImg, color: "bg-fuchsia-300" },
+  { id: "ship", image: muaImg, color: "bg-violet-300" },
+  { id: "gem", image: coGaiImg, color: "bg-sky-300" },
+  { id: "compass", image: matTroiImg, color: "bg-orange-200" },
   {
     id: "search",
-    Icon: Search,
-    color: "bg-gradient-to-r from-fuchsia-500 to-cyan-500",
+    image: timKiemImg,
+    color: "bg-gradient-to-r from-pink-300 to-violet-300",
   },
   {
     id: "sparkles",
-    Icon: Sparkles,
-    color: "bg-gradient-to-r from-fuchsia-500 to-cyan-500",
+    image: samSetImg,
+    color: "bg-gradient-to-r from-fuchsia-300 to-sky-300",
   },
   {
     id: "sailboat",
-    Icon: Ship,
-    color: "bg-gradient-to-r from-fuchsia-500 to-cyan-500",
+    image: nguoiTuyetImg,
+    color: "bg-gradient-to-r from-violet-300 to-rose-300",
   },
 ];
 
@@ -105,7 +100,7 @@ const PRESET_LAYOUTS: Layout[] = [
 
 interface DraggableCardProps {
   id: string;
-  Icon: LucideIcon;
+  image: string;
   color: string;
   isSelected: boolean;
   onCardClick: () => void;
@@ -113,7 +108,7 @@ interface DraggableCardProps {
 
 function DraggableCard({
   id,
-  Icon,
+  image,
   color,
   isSelected,
   onCardClick,
@@ -131,11 +126,11 @@ function DraggableCard({
         e.stopPropagation();
         onCardClick();
       }}
-      className={`${color} rounded-lg p-2 md:p-4 cursor-pointer flex items-center justify-center transition-all touch-none relative ${
+      className={`${color} rounded-lg overflow-hidden cursor-pointer flex items-center justify-center transition-all touch-none relative ${
         isDragging ? "opacity-50 scale-95" : "hover:scale-105"
       } ${
         isSelected
-          ? "ring-4 ring-yellow-400 ring-offset-2 ring-offset-gray-900 scale-110 shadow-xl shadow-yellow-400/50"
+          ? "ring-4 ring-pink-300 ring-offset-2 ring-offset-violet-950 scale-110 shadow-xl shadow-pink-300/50"
           : ""
       }`}
       style={{
@@ -144,9 +139,14 @@ function DraggableCard({
         WebkitTouchCallout: "none",
       }}
     >
-      <Icon className="w-5 h-5 md:w-8 md:h-8 text-white" strokeWidth={2.5} />
+      <img
+        src={image}
+        alt=""
+        draggable={false}
+        className="h-full w-full rounded-md object-cover select-none"
+      />
       {isSelected && (
-        <div className="absolute -top-1 -right-1 w-3 h-3 bg-yellow-400 rounded-full animate-pulse"></div>
+        <div className="absolute -top-1 -right-1 w-3 h-3 bg-pink-300 rounded-full animate-pulse"></div>
       )}
     </div>
   );
@@ -194,15 +194,15 @@ function DroppableCell({
       onClick={onCellClick}
       onDoubleClick={onDoubleClick}
       onTouchEnd={handleTouchEnd}
-      className={`bg-gradient-to-br from-gray-800/60 to-gray-900/60 backdrop-blur-sm rounded-lg border-2 transition-all relative ${
+      className={`bg-gradient-to-br from-white/80 to-pink-50/80 backdrop-blur-sm rounded-lg border-2 transition-all relative shadow-sm ${
         isOver
-          ? "border-yellow-500 bg-yellow-500/10 shadow-lg shadow-yellow-500/30"
+          ? "border-pink-400 bg-pink-200/45 shadow-lg shadow-pink-300/40"
           : isClickMode && !card
-          ? "border-yellow-400/50 bg-yellow-400/5 cursor-pointer hover:border-yellow-400 hover:bg-yellow-400/10"
-          : "border-gray-700/50"
+          ? "border-pink-300/70 bg-pink-100/60 cursor-pointer hover:border-pink-400 hover:bg-pink-200/70"
+          : "border-violet-200/70"
       } ${
         isLocked
-          ? "ring-2 ring-blue-500 ring-offset-1 ring-offset-gray-900"
+          ? "ring-2 ring-sky-300 ring-offset-1 ring-offset-pink-50"
           : ""
       }`}
       style={{ aspectRatio: "3/4" }}
@@ -219,13 +219,15 @@ function DroppableCell({
               isLocked ? "opacity-80" : ""
             }`}
           >
-            <card.Icon
-              className="w-6 h-6 md:w-8 md:h-8 lg:w-10 lg:h-10 text-white"
-              strokeWidth={2.5}
+            <img
+              src={card.image}
+              alt=""
+              draggable={false}
+              className="h-full w-full rounded-lg object-cover select-none"
             />
           </div>
           {isLocked && (
-            <div className="absolute top-1 right-1 bg-blue-500 rounded-full p-1">
+            <div className="absolute top-1 right-1 bg-sky-400 rounded-full p-1 shadow-md shadow-sky-300/40">
               <Lock className="w-3 h-3 text-white" />
             </div>
           )}
@@ -235,9 +237,9 @@ function DroppableCell({
                 e.stopPropagation();
                 onRemove();
               }}
-              className="absolute -top-2 -right-2 bg-gradient-to-r from-yellow-500 to-yellow-600 hover:from-yellow-600 hover:to-yellow-700 rounded-full p-1 md:p-1.5 transition-all shadow-lg z-10"
+              className="absolute -top-2 -right-2 bg-gradient-to-r from-pink-400 to-fuchsia-400 hover:from-pink-500 hover:to-fuchsia-500 rounded-full p-1 md:p-1.5 transition-all shadow-lg z-10"
             >
-              <X className="w-3 h-3 md:w-4 md:h-4 text-black" />
+              <X className="w-3 h-3 md:w-4 md:h-4 text-white" />
             </button>
           )}
         </>
@@ -632,17 +634,17 @@ export default function CardMemoryHelper() {
       onDragStart={handleDragStart}
       onDragEnd={handleDragEnd}
     >
-      <div className="min-h-screen bg-linear-to-br from-gray-900 via-black to-yellow-900/20 text-white p-4">
+      <div className="min-h-screen bg-linear-to-br from-pink-50 via-violet-50 to-sky-50 text-violet-950 p-4">
         <div className=" mx-auto space-y-6">
           {/* Header */}
           <div className="text-center mb-6">
-            <h1 className="text-3xl md:text-4xl lg:text-5xl font-bold bg-linear-to-r from-yellow-400 via-yellow-500 to-yellow-600 bg-clip-text text-transparent mb-2 drop-shadow-lg">
+            <h1 className="text-3xl md:text-4xl lg:text-5xl font-bold bg-linear-to-r from-fuchsia-500 via-pink-500 to-violet-500 bg-clip-text text-transparent mb-2 drop-shadow-sm">
               Sự Kiện Lật Thẻ Bài
             </h1>
-            <p className="text-gray-400 text-sm md:text-base">
+            <p className="text-violet-500 text-sm md:text-base">
               Công cụ hỗ trợ lật thẻ bài
             </p>
-            <p className="text-gray-400 text-sm md:text-base">
+            <p className="text-violet-500 text-sm md:text-base">
               Tool này hoàn toàn miễn phí nên các bạn cứ thoải mái dùng.
               <br />
               Nếu bạn thấy tool này hữu ích, ủng hộ mình một ít nếu có thể nhé!
@@ -654,10 +656,10 @@ export default function CardMemoryHelper() {
           </div>
 
           {/* Controls */}
-          <div className="bg-linear-to-br from-gray-800/80 to-gray-900/80 backdrop-blur-sm rounded-xl p-5 lg:p-6 space-y-4 border border-yellow-500/30 shadow-xl shadow-yellow-500/10">
+          <div className="bg-linear-to-br from-white/85 to-pink-100/75 backdrop-blur-sm rounded-xl p-5 lg:p-6 space-y-4 border border-pink-200/80 shadow-xl shadow-pink-200/50">
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 items-end">
               <div className="space-y-1">
-                <label className="text-xs text-yellow-400 font-medium">
+                <label className="text-xs text-fuchsia-600 font-medium">
                   Hàng:
                 </label>
                 <Input
@@ -667,11 +669,11 @@ export default function CardMemoryHelper() {
                   onChange={(e) =>
                     handleLayoutChange(parseInt(e.target.value) || 1, cols)
                   }
-                  className="bg-gray-900/50 border-yellow-500/30 text-white focus:border-yellow-500 focus:ring-yellow-500/20"
+                  className="bg-white/80 border-pink-200 text-violet-950 focus:border-pink-400 focus:ring-pink-300/30"
                 />
               </div>
               <div className="space-y-1">
-                <label className="text-xs text-yellow-400 font-medium">
+                <label className="text-xs text-fuchsia-600 font-medium">
                   Cột:
                 </label>
                 <Input
@@ -681,11 +683,11 @@ export default function CardMemoryHelper() {
                   onChange={(e) =>
                     handleLayoutChange(rows, parseInt(e.target.value) || 1)
                   }
-                  className="bg-gray-900/50 border-yellow-500/30 text-white focus:border-yellow-500 focus:ring-yellow-500/20"
+                  className="bg-white/80 border-pink-200 text-violet-950 focus:border-pink-400 focus:ring-pink-300/30"
                 />
               </div>
               <div className="col-span-2 lg:col-span-2 space-y-1">
-                <label className="text-xs text-yellow-400 font-medium lg:block hidden">
+                <label className="text-xs text-fuchsia-600 font-medium lg:block hidden">
                   Layout:
                 </label>
                 <Select
@@ -697,13 +699,13 @@ export default function CardMemoryHelper() {
                     if (layout) handleLayoutChange(layout.rows, layout.cols);
                   }}
                 >
-                  <SelectTrigger className="bg-linear-to-r from-yellow-500 to-yellow-600 border-yellow-600 text-black font-semibold hover:from-yellow-600 hover:to-yellow-700">
+                  <SelectTrigger className="bg-linear-to-r from-pink-400 to-violet-400 border-pink-300 text-white font-semibold hover:from-pink-500 hover:to-violet-500">
                     <SelectValue />
                   </SelectTrigger>
-                  <SelectContent className="bg-linear-to-r from-yellow-500 to-yellow-600">
+                  <SelectContent className="bg-white border-pink-200 text-violet-950">
                     {PRESET_LAYOUTS.map((layout) => (
                       <SelectItem
-                        className="bg-linear-to-r from-yellow-500 to-yellow-600 border-yellow-600 text-black font-semibold hover:from-yellow-600 hover:to-yellow-700"
+                        className="text-violet-950 focus:bg-pink-100 focus:text-fuchsia-700"
                         key={layout.label}
                         value={`${layout.rows}x${layout.cols}`}
                       >
@@ -719,7 +721,7 @@ export default function CardMemoryHelper() {
               <Button
                 onClick={handleUndo}
                 disabled={history.length === 0}
-                className="bg-gradient-to-r from-yellow-500 to-yellow-600 hover:from-yellow-600 hover:to-yellow-700 text-black font-semibold shadow-lg shadow-yellow-500/30 disabled:opacity-50 disabled:shadow-none"
+                className="bg-gradient-to-r from-pink-400 to-fuchsia-400 hover:from-pink-500 hover:to-fuchsia-500 text-white font-semibold shadow-lg shadow-pink-300/40 disabled:opacity-50 disabled:shadow-none"
               >
                 <Undo2 className="w-4 h-4 mr-2" />
                 Quay lại
@@ -727,7 +729,7 @@ export default function CardMemoryHelper() {
               <Button
                 onClick={handleReset}
                 variant="outline"
-                className="border-yellow-500/50 text-yellow-400 hover:bg-yellow-500/10 hover:text-yellow-300 hover:border-yellow-400"
+                className="border-violet-300/70 bg-white/50 text-violet-600 hover:bg-violet-100/70 hover:text-violet-700 hover:border-violet-400"
               >
                 <RotateCcw className="w-4 h-4 mr-2" />
                 Xóa
@@ -737,16 +739,16 @@ export default function CardMemoryHelper() {
 
           {/* Warning Dialog */}
           {showWarning && (
-            <Alert className="bg-gradient-to-br from-gray-800/90 to-gray-900/90 backdrop-blur-sm border-yellow-500/50 shadow-xl">
+            <Alert className="bg-gradient-to-br from-white/95 to-pink-100/90 backdrop-blur-sm border-pink-300/70 shadow-xl shadow-pink-200/50">
               <AlertDescription className="space-y-4">
-                <p className="text-white font-medium">
+                <p className="text-violet-950 font-medium">
                   Bạn có các thẻ đã đặt. Đổi layout sẽ xóa hết các thẻ này. Bạn
                   có chắc không?
                 </p>
                 <div className="flex gap-2">
                   <Button
                     onClick={confirmLayoutChange}
-                    className="flex-1 bg-gradient-to-r from-yellow-500 to-yellow-600 hover:from-yellow-600 hover:to-yellow-700 text-black font-semibold shadow-lg"
+                    className="flex-1 bg-gradient-to-r from-pink-400 to-fuchsia-400 hover:from-pink-500 hover:to-fuchsia-500 text-white font-semibold shadow-lg"
                   >
                     Đồng ý
                   </Button>
@@ -756,7 +758,7 @@ export default function CardMemoryHelper() {
                       setPendingLayout(null);
                     }}
                     variant="outline"
-                    className="flex-1 border-gray-600 text-white hover:bg-gray-800/50"
+                    className="flex-1 border-violet-300 text-violet-600 hover:bg-violet-100/70"
                   >
                     Hủy
                   </Button>
@@ -767,12 +769,12 @@ export default function CardMemoryHelper() {
 
           {/* Card Pool */}
           <div className="space-y-3">
-            <h2 className="text-sm md:text-base font-semibold text-yellow-400">
+            <h2 className="text-sm md:text-base font-semibold text-fuchsia-600">
               {selectedCard
                 ? "Đã chọn - Click vào ô để đặt thẻ:"
                 : "Chọn biểu tượng (Click hoặc Kéo):"}
             </h2>
-            <div className="grid grid-cols-4 sm:grid-cols-5 md:grid-cols-6 lg:grid-cols-9 gap-2 md:gap-3 bg-gradient-to-br from-gray-800/50 to-gray-900/50 backdrop-blur-sm p-3 md:p-4 rounded-xl border border-yellow-500/20">
+            <div className="grid grid-cols-4 sm:grid-cols-5 md:grid-cols-6 lg:grid-cols-9 gap-2 md:gap-3 bg-gradient-to-br from-white/75 to-violet-100/70 backdrop-blur-sm p-3 md:p-4 rounded-xl border border-pink-200/80 shadow-lg shadow-pink-100/60">
               {CARD_ICONS.map((card) => (
                 <DraggableCard
                   key={card.id}
@@ -786,7 +788,7 @@ export default function CardMemoryHelper() {
 
           {/* Grid */}
           <div className="space-y-3 overflow-x-hidden">
-            <h2 className="text-sm md:text-base font-semibold text-yellow-400">
+            <h2 className="text-sm md:text-base font-semibold text-fuchsia-600">
               Lưới ({rows}×{cols}):
             </h2>
             <div
@@ -810,7 +812,7 @@ export default function CardMemoryHelper() {
                 />
               ))}
             </div>
-            <p className="text-xs md:text-xl text-yellow-400 text-center mt-2">
+            <p className="text-xs md:text-xl text-violet-500 text-center mt-2">
               💡 Mẹo: Double click vào thẻ đã khóa để mở khóa
             </p>
           </div>
@@ -819,14 +821,14 @@ export default function CardMemoryHelper() {
         <DragOverlay dropAnimation={null}>
           {activeCard ? (
             <div
-              className={`${activeCard.color} rounded-lg p-4 flex items-center justify-center shadow-2xl opacity-90`}
+              className={`${activeCard.color} rounded-lg overflow-hidden flex items-center justify-center shadow-2xl opacity-90`}
               style={{ aspectRatio: "3/4", width: "80px" }}
             >
-              <activeCard.Icon
-                className={`text-white ${
-                  cols > 6 ? "w-4 h-4" : "w-6 h-6 md:w-8 md:h-8"
-                }`}
-                strokeWidth={2.5}
+              <img
+                src={activeCard.image}
+                alt=""
+                draggable={false}
+                className="h-full w-full rounded-md object-cover select-none"
               />
             </div>
           ) : null}
